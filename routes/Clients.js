@@ -1,7 +1,6 @@
 const express = require('express')
 const clients = express.Router()
 const mongoose = require('mongoose')
-const credentialsDatabase = require('../private/database-credentials')
 const protectRoute = require('../securityToken/verifyToken')
 const clientSchema = require('../models/Clients')
 const cors = require('cors')

@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose')
 const key = require('../private/key-jwt');
 const userSchema = require('../models/Users')
-const credentialsDatabase = require('../private/database-credentials')
 
 protectRoute.use((req, res, next) => {
     const database = req.headers['x-database-connect'];

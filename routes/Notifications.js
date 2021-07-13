@@ -3,7 +3,6 @@ const notifications = express.Router()
 const mongoose = require('mongoose')
 const protectRoute = require('../securityToken/verifyToken')
 const notificationSchema = require('../models/Notifications')
-const credentialsDatabase = require('../private/database-credentials')
 const cors = require('cors')
 
 notifications.use(cors())

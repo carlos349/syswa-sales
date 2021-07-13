@@ -5,7 +5,6 @@ const protectRoute = require('../securityToken/verifyToken')
 const productSchema = require('../models/Products')
 const storeSchema = require('../models/Store')
 const historyProductionSchema = require('../models/HistoryProduction')
-const formats = require('../formats')
 const cors = require('cors')
 
 products.use(cors())

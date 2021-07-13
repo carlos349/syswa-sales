@@ -3,7 +3,6 @@ const users = express.Router()
 const mongoose = require('mongoose')
 const protectRoute = require('../securityToken/verifyToken')
 const userSchema = require('../models/Users')
-const credentialsDatabase = require('../private/database-credentials')
 const credentialSchema = require('../models/userCrendentials')
 const configurationSchema = require('../models/Configurations')
 const key = require('../private/key-jwt');
