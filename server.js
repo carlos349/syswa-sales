@@ -10,7 +10,7 @@ const io = require('socket.io')(server);
 // const verify = require('./accessFunctions/verify.js')
 
 // settings
-app.set('port', process.env.PORT || 3200)
+app.set('port', process.env.PORT || 1024)
 app.set('trust proxy', true);
 
 //middlewares
