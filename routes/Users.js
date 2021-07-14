@@ -116,6 +116,16 @@ users.post('/registerUser', protectRoute, async (req, res) => {
             ]
         },
         {
+            "ruta" : "inventario",
+            "validaciones" : [
+                "filtrar",
+                "registrar",
+                "editar",
+                "detalle",
+                "eliminar"
+            ]
+        },
+        {
             "ruta" : "caja",
             "validaciones" : [
                 'cerrar',
@@ -224,11 +234,23 @@ users.post('/registerFirst', async (req, res) => {
                 },
                 {
                     "ruta" : "caja",
-                    "validaciones" : []
+                    "validaciones" : [
+                        'cerrar',
+                        'fondo',
+                        'visualizar',
+                        'reporte',
+                        'editar'
+                    ]
                 },
                 {
                     "ruta" : "bodega",
-                    "validaciones" : []
+                    "validaciones" : [
+                        "filtrar",
+                        "registrar",
+                        "editar",
+                        "detalle",
+                        "eliminar"
+                    ]
                 }],
                 first_name: req.body.first_name,
                 last_name: req.body.last_name,
