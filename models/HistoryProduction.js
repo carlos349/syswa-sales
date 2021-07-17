@@ -8,6 +8,9 @@ const historyProductionSchema = new Schema({
     produced: {
         type: Number,
     },
+    type: {
+        type: String
+    },
     createdAt: {
         type: Date,
         default: Date.now

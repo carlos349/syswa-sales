@@ -121,6 +121,7 @@ products.post('/addProduction/:id', protectRoute, (req, res) => {
     const dataProduction = {
         product: product.product,
         produced: quantity,
+        type: 'Producción',
         createdAt: new Date()
     }
     
@@ -139,6 +140,84 @@ products.post('/addProduction/:id', protectRoute, (req, res) => {
                     }
                 }).then(ready => {})
             }
+            HistoryProduction.create(dataProduction)
+            .then(createHistory => {
+                res.json({status: 'ok', token: req.requestToken}) 
+            }).catch(err => res.send(err))
+        }
+    }).catch(err => res.send(err))
+})
+
+products.post('/discountProduction/:id', protectRoute, (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Product = conn.model('products', productSchema)
+    const Store = conn.model('stores', storeSchema)
+    const HistoryProduction = conn.model('historyProductions', historyProductionSchema)
+
+    const product = req.body.product
+    const quantity = req.body.quantity
+
+    const dataProduction = {
+        product: product.product,
+        produced: parseFloat('-'+quantity),
+        type: 'Reposición de stock',
+        createdAt: new Date()
+    }
+    
+    Product.findByIdAndUpdate(req.params.id, {
+        $inc: {
+            quantity: parseFloat('-'+quantity)
+        }
+    }).then(editProduct => {
+        if (editProduct) {
+            for (const material of product.rawMaterial) {
+                var consume = 0
+                consume = ((parseFloat(quantity) / product.quantityProduction) * parseFloat(material.quantity))
+                Store.findByIdAndUpdate(material.id, {
+                    $inc: {
+                        consume: parseFloat('-'+consume)
+                    }
+                }).then(ready => {})
+            }
+            HistoryProduction.create(dataProduction)
+            .then(createHistory => {
+                res.json({status: 'ok', token: req.requestToken}) 
+            }).catch(err => res.send(err))
+        }
+    }).catch(err => res.send(err))
+})
+
+products.post('/decreaseProduction/:id', protectRoute, (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Product = conn.model('products', productSchema)
+    const HistoryProduction = conn.model('historyProductions', historyProductionSchema)
+
+    const product = req.body.product
+    const quantity = req.body.quantity
+
+    const dataProduction = {
+        product: product.product,
+        produced: parseFloat('-'+quantity),
+        type: 'Merma',
+        createdAt: new Date()
+    }
+    
+    Product.findByIdAndUpdate(req.params.id, {
+        $inc: {
+            quantity: parseFloat('-'+quantity)
+        }
+    }).then(editProduct => {
+        if (editProduct) {
             HistoryProduction.create(dataProduction)
             .then(createHistory => {
                 res.json({status: 'ok', token: req.requestToken}) 
