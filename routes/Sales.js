@@ -641,39 +641,32 @@ sales.post('/closeDay/:name', protectRoute, async (req, res) => {
   }
 
   try {
-      const closed = await Closure.create(CloseDay)
-      if (closed) {
-          try {
-              const removeSales = await DaySale.deleteMany({})
-              if (removeSales) {
-                  try {
-                      const findCashFund = await CashFund.find()
-                      try {
-                          const reloadFunds = await CashFund.findByIdAndUpdate(findCashFund[0]._id, {
-                              $set: {
-                                  userRegister: '',
-                                  amount: 0, 
-                                  amountEgress: 0,
-                                  validator: false
-                              }
-                          })
-                          if (reloadFunds) {
-                              res.json({status: 'ok', token: req.requestToken})
-                          }
-                          res.json({status: 'bad'})
-                      }catch(err){
-                          res.send(err)
-                      }
-                  }catch(err){
-                    res.send(err)
-                  }
-              }
-              res.json({status: 'bad'})
-          }catch(err){
-              res.send(err)
+    const closed = await Closure.create(CloseDay)
+    try {
+      const removeSales = await DaySale.deleteMany({})
+      try {
+        const findCashFund = await CashFund.find()
+        try {
+          const reloadFunds = await CashFund.findByIdAndUpdate(findCashFund[0]._id, {
+            $set: {
+              userRegister: '',
+              amount: 0, 
+              amountEgress: 0,
+              validator: false
+            }
+          })
+          if (reloadFunds) {
+            res.json({status: 'ok', token: req.requestToken})
           }
+        }catch(err){
+          res.send(err)
+        }
+      }catch(err){
+        res.send(err)
       }
-      res.json({status: 'bad'})
+    }catch(err){
+      res.send(err)
+    }
   }catch(err){
       res.send(err)
   }
@@ -728,48 +721,35 @@ sales.post('/registerFund', protectRoute, async (req, res) => {
 // input - params id, form with employeComision
 // ouput - status and token
 sales.put('/:id', protectRoute, async (req, res, next) => {
-    const database = req.headers['x-database-connect'];
-    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
+  const database = req.headers['x-database-connect'];
+  const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+  const DaySale = conn.model('daySales', daySaleSchema)
+  const Sale = conn.model('sales', saleSchema)
+  const Product = conn.model('products', productSchema)
+  const id = req.params.id
+  
+  try {
+    const cancelSale = await Sale.findByIdAndUpdate(id, {
+      $set: { status: false}
     })
-    const DaySale = conn.model('daySales', daySaleSchema)
-    const Sale = conn.model('sales', saleSchema)
-    const Inventory = conn.model('inventories', inventorySchema)
-    const id = req.params.id
-    
-    try {
-      const cancelSale = await Sale.findByIdAndUpdate(id, {
-        $set: { status: false}
-      })
-      if (cancelSale) {
-        console.log(cancelSale)
-        const items = cancelSale.items
-        for (let index = 0; index < items.length; index++) {
-          const item = items[index];
-          if (item.type == 'product') {
-            Inventory.findByIdAndUpdate(item.item._id,{
-              $inc: {
-                consume: parseFloat('-'+item.quantityProduct)
-              }
-            }).then(editInventory => {})
-          }else{
-            for (const product of item.item.products) {
-              Inventory.findByIdAndUpdate(product.id,{
-                $inc: {
-                  consume: parseFloat('-'+product.count)
-                }
-              }).then(editInventory => {})
-            }
-          }
+    const items = cancelSale.items
+    console.log(items)
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      Product.findByIdAndUpdate(item.item._id,{
+        $inc: {
+          consume: parseFloat('-'+item.quantityProduct)
         }
-        try {
-          const removeSale = await DaySale.findOneAndRemove({idTableSales: id})
-          res.json({status: 'ok', token: req.requestToken})
-        }catch(err){res.send(err)}
-      }
-      res.json({status: 'bad'})
+      }).then(editInventory => {})
+    }
+    try {
+      const removeSale = await DaySale.findOneAndRemove({idTableSales: id})
+      res.json({status: 'ok', token: req.requestToken})
     }catch(err){res.send(err)}
+  }catch(err){res.send(err)}
 })
 
 // input - params id, form with manual
