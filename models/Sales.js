@@ -20,6 +20,9 @@ const saleSchema = new Schema({
     status: {
         type: Boolean
     },
+    shipping: {
+        type: Number
+    },
     uuid: {
         type: Number
     },

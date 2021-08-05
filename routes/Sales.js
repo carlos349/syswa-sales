@@ -7,6 +7,7 @@ const closureSchema = require('../models/Closures')
 const cashfundSchema = require('../models/CashFunds')
 const daySaleSchema = require('../models/DaySales')
 const configurationSchema = require('../models/configurations')
+const historyClosedInventorySchema = require('../models/HistoryClosedProducts')
 const clientSchema = require('../models/Clients')
 const productSchema = require('../models/Products')
 const inventorySchema = require('../models/Inventory')
@@ -59,6 +60,29 @@ sales.get('/getConfiguration', protectRoute, async (req, res) => {
     }catch(err){
         res.send(err)
     }
+})
+
+// input - null
+// output - status, data, token
+sales.get('/getHistoryClosed', protectRoute, async (req, res) => {
+  const database = req.headers['x-database-connect'];
+  const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+
+  const HistoryClosed = conn.model('historyClosedProducts', historyClosedInventorySchema)
+
+  try {
+    const getClosed = await HistoryClosed.find()
+    if (getClosed.length > 0) {
+      res.json({status: 'ok', data: getClosed, token: req.requestToken})
+    }else{
+      res.json({status: 'bad', data: getClosed, token: req.requestToken})
+    }
+  }catch(err){
+    res.send(err)
+  }
 })
 
 // input - null
@@ -360,49 +384,14 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
       rangeExcel: req.body.rangeExcel,  
       clientSelect: req.body.clientSelect
     }
-    console.log(data)
     var dataTable = []
     if (data.clientSelect.length == 0) {
-        try {
-            const sales = await Sale.find({
-                $and: [
-                  {createdAt: {$gte: data.rangeExcel[0]+' 00:00', $lte: data.rangeExcel[1]+' 24:00'}},
-                  {status:true}
-                ]
-            })
-            if(sales.length > 0){
-              for (let index = 0; index < sales.length; index++) {
-                const element = sales[index];
-
-                var typesPay = ''
-                for (let e = 0; e < element.typesPay.length; e++) {
-                    const elementTwo = element.typesPay[e];
-                    if (elementTwo.total > 0) {
-                      typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
-                    }
-                }
-                for (const items of element.items) {
-                  if (items.type == 'product') {
-                    dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: items.quantityProduct, Precio: items.item.price, 'Tipo de pago': typesPay, Total: items.totalItem})
-                  }
-                }
-              }
-              res.json({status: 'ok', dataTable: dataTable, token: req.requestToken})
-            }else{
-              res.json({status: 'bad'})
-            }
-        }catch(err){
-            res.send(err)
-        }
-    }else{
       try {
         const sales = await Sale.find({
-            $and: [
-                {createdAt: {$gte: data.rangeExcel[0]+' 00:00', $lte: data.rangeExcel[1]+' 24:00'}},
-                {'client.email': data.clientSelect },
-                {status:true},
-                {branch: req.body.branch}
-            ]
+          $and: [
+            {createdAt: {$gte: data.rangeExcel[0]+' 00:00', $lte: data.rangeExcel[1]+' 24:00'}},
+            {status:true}
+          ]
         })
         if(sales.length > 0){
           for (let index = 0; index < sales.length; index++) {
@@ -410,27 +399,51 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
 
             var typesPay = ''
             for (let e = 0; e < element.typesPay.length; e++) {
-                const elementTwo = element.typesPay[e];
-                if (elementTwo.total > 0) {
-                  typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
-                }
+              const elementTwo = element.typesPay[e];
+              if (elementTwo.total > 0) {
+                typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
+              }
             }
             for (const items of element.items) {
-              var additionals = ''
-              var totalAddi = 0
-              for (const addi of items.additionals) {
-                additionals = additionals == '' ? addi.name : + ', ' + addi.name
-                totalAddi = totalAddi + addi.price
+              if (items.type == 'product') {
+                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: items.quantityProduct, Precio: items.item.price, 'Tipo de pago': typesPay, Despacho: element.shipping, Total: items.totalItem})
               }
-              if (items.type == 'service') {
-                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: '', Servicio: items.item.name, Precio: items.item.price, Adicionales: additionals == '' ? 'Sin adicional' : additionals, 'Total Adicionales': totalAddi,  'Tipo de pago': typesPay, Total: items.totalItem})
-              }else{
-                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name+', Cantidad: '+items.quantityProduct, Servicio: '', Precio: items.item.price, Adicionales: 'Sin adicional', 'Total Adicionales': 'Sin adicional',  'Tipo de pago': typesPay, Total: items.totalItem})
-              }
-              
             }
           }
-          console.log(dataTable)
+          res.json({status: 'ok', dataTable: dataTable, token: req.requestToken})
+        }else{
+          res.json({status: 'bad'})
+        }
+      }catch(err){
+        res.send(err)
+      }
+    }else{
+      try {
+        const sales = await Sale.find({
+          $and: [
+            {createdAt: {$gte: data.rangeExcel[0]+' 00:00', $lte: data.rangeExcel[1]+' 24:00'}},
+            {'client.email': data.clientSelect },
+            {status:true},
+            {branch: req.body.branch}
+          ]
+        })
+        if(sales.length > 0){
+          for (let index = 0; index < sales.length; index++) {
+            const element = sales[index];
+
+            var typesPay = ''
+            for (let e = 0; e < element.typesPay.length; e++) {
+              const elementTwo = element.typesPay[e];
+              if (elementTwo.total > 0) {
+                typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
+              }
+            }
+            for (const items of element.items) {
+              if (items.type == 'product') {
+                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: items.quantityProduct, Precio: items.item.price, 'Tipo de pago': typesPay, Despacho: element.shipping, Total: items.totalItem})
+              }
+            }
+          }
           res.json({status: 'ok', dataTable: dataTable, token: req.requestToken})
         }else{
           res.json({status: 'bad'})
@@ -483,6 +496,7 @@ sales.post('/process', protectRoute, (req, res) => {
   const client = req.body.client
   const clientId = req.body.clientId
   const restPay = req.body.restPay
+  const shipping = req.body.shipping
   
   const dataSale = {
     items: [],
@@ -492,6 +506,7 @@ sales.post('/process', protectRoute, (req, res) => {
     purchaseOrder: 0,
     count: 0,
     status: true,
+    shipping: shipping == '' ? 0 : shipping,
     totals: {
       total: total,
       totalPay: totalPay
@@ -568,6 +583,64 @@ sales.post('/process', protectRoute, (req, res) => {
       res.json({status: 'no-cash'})
     }
   })
+})
+
+// input - form with total, branch, userRegister, amount
+// ouput - status and token
+sales.post('/closeProducts', protectRoute, async (req, res) => {
+  const database = req.headers['x-database-connect'];
+  const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+
+  const Product = conn.model('products', productSchema)
+  const HistoryClosed = conn.model('historyClosedProducts', historyClosedInventorySchema)
+  const products = req.body.products
+
+  for (let i = 0; i < products.length; i++) {
+    console.log(products[i]._id)
+    console.log(products[i].realTotal)
+    Product.findByIdAndUpdate(products[i]._id, {
+      $set: {
+        quantity: parseFloat(products[i].realTotal),
+        consume: 0
+      }
+    })
+    .then(ready => {})
+    var difference = parseFloat(products[i].realTotal) - (parseFloat(products[i].quantity) - parseFloat(products[i].consume))
+    if (difference == 0) {
+      products[i].difference = "Sin diferencia"
+    }
+    if (difference > 0) {
+      products[i].difference = "+" + difference
+    }
+    if (difference < 0) {
+      products[i].difference = difference
+    }
+  }
+  console.log(products)
+  
+  const historical = {
+    user: {
+      id: req.body.idUser,
+      firstName: req.body.firstNameUser,
+      lastName: req.body.lastNameUser,
+      email: req.body.emailUser
+    },
+    totalProduct: products.length,
+    products: products,
+    createdAt: new Date()
+  }
+
+  try{
+    const history = await HistoryClosed.create(historical)
+    if (history) {
+      res.json({status: 'ok', token: req.requestToken})
+    }
+  }catch(err){
+    res.send(err)
+  }
 })
 
 // input - params id, form with branch, manual and system
