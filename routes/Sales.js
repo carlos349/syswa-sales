@@ -397,16 +397,16 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
           for (let index = 0; index < sales.length; index++) {
             const element = sales[index];
 
-            var typesPay = ''
+            var typesPay = {}
             for (let e = 0; e < element.typesPay.length; e++) {
-              const elementTwo = element.typesPay[e];
-              if (elementTwo.total > 0) {
-                typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
-              }
+                const elementTwo = element.typesPay[e];
+                if (elementTwo.total > 0) {
+                  typesPay[elementTwo.type] = elementTwo.total
+                }
             }
             for (const items of element.items) {
               if (items.type == 'product') {
-                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: items.quantityProduct, Precio: items.item.price, 'Tipo de pago': typesPay, Despacho: element.shipping, Total: items.totalItem})
+                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: parseInt(items.quantityProduct), Precio: items.item.price, Despacho: element.shipping, Total: items.totalItem, ...typesPay})
               }
             }
           }
@@ -431,16 +431,16 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
           for (let index = 0; index < sales.length; index++) {
             const element = sales[index];
 
-            var typesPay = ''
+            var typesPay = {}
             for (let e = 0; e < element.typesPay.length; e++) {
-              const elementTwo = element.typesPay[e];
-              if (elementTwo.total > 0) {
-                typesPay = typesPay + elementTwo.type + ': ' + elementTwo.total + ' '
-              }
+                const elementTwo = element.typesPay[e];
+                if (elementTwo.total > 0) {
+                  typesPay[elementTwo.type] = elementTwo.total
+                }
             }
             for (const items of element.items) {
               if (items.type == 'product') {
-                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: items.quantityProduct, Precio: items.item.price, 'Tipo de pago': typesPay, Despacho: element.shipping, Total: items.totalItem})
+                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: parseInt(items.quantityProduct), Precio: items.item.price, Despacho: element.shipping, Total: items.totalItem, ...typesPay})
               }
             }
           }
