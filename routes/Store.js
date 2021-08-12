@@ -664,7 +664,7 @@ stores.post('/closestore', protectRoute, async (req, res) => {
         })
         .then(ready => {})
         products[i].ideal = parseFloat(products[i].quantity + parseFloat(products[i].entry) - parseFloat(products[i].consume))
-        var difference = parseFloat(products[i].real) - parseFloat(products[i].ideal)
+        var difference = (parseFloat(products[i].real) - parseFloat(products[i].ideal)).toFixed(2)
         if (difference == 0) {
             products[i].difference = "Sin diferencia"
         }
