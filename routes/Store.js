@@ -321,6 +321,29 @@ stores.get('/gethistoryclosedbybranch', protectRoute, async (req, res) => {
 
 //Api que busca el historial por sucursal (Input: branch) -- Api that search history by branch (Input: branch)
 
+stores.get('/gethistoryclosedbyid/:id', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const HistoryClosed = conn.model('historyClosedInventories', historyClosedInventorySchema)
+
+    try{
+        const historyById = await HistoryClosed.findById(req.params.id)
+        res.json({status: 'ok', data: historyById, token: req.requestToken})
+    }catch(err){
+        res.send(err)
+    }
+})
+
+//Final de la api. (Retorna: Datos del historial de la sucursal) -- Api end. (Return: branch history´s data)
+
+//--------------------------------------------------------------------------------------
+
+//Api que busca el historial por sucursal (Input: branch) -- Api that search history by branch (Input: branch)
+
 stores.get('/getstoreclosed', protectRoute, async (req, res) => {
     const database = req.headers['x-database-connect'];
     const conn = mongoose.createConnection('mongodb://localhost/'+database, {
