@@ -27,7 +27,7 @@ sales.get('/', protectRoute, async (req, res) => {
 
     const Sale = conn.model('sales', saleSchema)
     try {
-        const getSales = await Sale.find()
+        const getSales = await Sale.find().sort({createdAt: -1})
         if (getSales.length > 0) {
             res.json({status: 'ok', data: getSales, token: req.requestToken})
         }else{
