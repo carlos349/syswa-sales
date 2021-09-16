@@ -2,6 +2,15 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const configurationSchema = new Schema({
+    branch: {
+        type: String
+    },
+    blockHour: {
+        type: Object
+    },
+    blackList: {
+        type: Array
+    },
     businessName: {
         type: String
     },
@@ -14,11 +23,26 @@ const configurationSchema = new Schema({
     businessLocation: {
         type: String
     },
+    bussinessLogo: { 
+        type: String
+    },
+    businessEmail: {
+        type: String
+    },
+    bussinessRoute: {
+        type: String
+    },
     typesPay: {
         type: Array
     },
     currency: {
         type: String
+    },
+    datesPolitics: {
+        type: Object
+    },
+    microServices: {
+        type: Array
     }
 })
 

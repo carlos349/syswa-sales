@@ -2,6 +2,9 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const daySaleSchema = new Schema({
+    branch: {
+        type: String
+    },
     items: {
         type: Array
     },

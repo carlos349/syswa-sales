@@ -314,7 +314,8 @@ users.post('/login', (req, res) => {
 						email: user.email,
 						status: user.status,
 						access: user.access,
-						LastAccess: user.lastAccess
+						LastAccess: user.lastAccess,
+                        branch: user.branch
 					}
 					let token = jwt.sign(payload, key, {
 						expiresIn: 60 * 60 * 24

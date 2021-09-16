@@ -3,6 +3,7 @@ const products = express.Router()
 const mongoose = require('mongoose')
 const protectRoute = require('../securityToken/verifyToken')
 const productSchema = require('../models/Products')
+const productBranchSchema = require('../models/ProductsBranch')
 const storeSchema = require('../models/Store')
 const historyProductionSchema = require('../models/HistoryProduction')
 const cors = require('cors')
@@ -47,6 +48,25 @@ products.get('/getHistory', protectRoute, async (req, res) => {
     }catch(err){res.send(err)}
 })
 
+products.get('/productsbranch/:branch', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
+
+    try {
+        const getProducts = await ProductBranch.find({branch: req.params.branch})
+        if(getProducts.length > 0){
+            res.json({status: 'ok', data: getProducts, token: req.requestToken})
+        }else{
+            res.json({status: 'bad', token: req.requestToken})
+        }
+    }catch(err){res.send(err)}
+})
+
 products.get('/:id', protectRoute, async (req, res) => {
     const database = req.headers['x-database-connect'];
     const conn = mongoose.createConnection('mongodb://localhost/'+database, {
@@ -54,10 +74,10 @@ products.get('/:id', protectRoute, async (req, res) => {
         useUnifiedTopology: true,
     })
 
-    const Product = conn.model('products', productSchema)
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
 
     try {
-        const getProducts = await Product.findById(req.params.id)
+        const getProducts = await ProductBranch.findById(req.params.id)
         if(getProducts){
             res.json({status: 'ok', data: getProducts, token: req.requestToken})
         }else{
@@ -99,6 +119,37 @@ products.post('/', protectRoute, async (req, res) => {
                 res.send(err)
             }
         }
+    }catch(err){
+        res.send(err)
+    }
+})
+
+
+products.post('/addProductToProductBranch', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
+
+    console.log(req.body.product)
+    const product = req.body.product
+    const data = {
+        branch: req.body.branch,
+        product: product.product,
+        quantity: 0,
+        consume: 0,
+        price: product.price,
+        rawMaterial: product.rawMaterial,
+        idInventory: product._id,
+        createdAt: new Date()
+    }
+
+    try {
+        const createProduct = await ProductBranch.create(data)
+        res.json({status: 'ok', data: createProduct, token: req.requestToken})
     }catch(err){
         res.send(err)
     }
@@ -246,6 +297,107 @@ products.put('/:id', protectRoute, async (req, res) => {
         })
         if (editProduct) {
             res.json({status: 'ok', token: req.requestToken}) 
+        }
+    }catch(err){
+        res.send(err)
+    }
+})
+
+products.put('/addProductToBranch/:branch', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Product = conn.model('products', productSchema)
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
+
+    try {
+        const editProductInventory = await Product.findByIdAndUpdate(req.body.idInventory, {
+            $inc: {
+                quantity: parseFloat('-'+req.body.entry)
+            }
+        })
+        if(editProductInventory){
+            try {
+                const editProductBranch = await ProductBranch.findByIdAndUpdate(req.body.id, {
+                    $inc: {
+                        quantity: parseFloat(req.body.entry)
+                    }
+                })
+                if (editProductBranch) {
+                    res.json({status: 'ok', token: req.requestToken})
+                }
+            }catch(err){
+                res.send(err)
+            }
+        }
+    }catch(err){
+        res.send(err)
+    }
+})
+
+products.put('/removeProductToBranch/:branch', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Product = conn.model('products', productSchema)
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
+
+    try {
+        const editProductInventory = await Product.findByIdAndUpdate(req.body.idInventory, {
+            $inc: {
+                quantity: parseFloat(req.body.entry)
+            }
+        })
+        if(editProductInventory){
+            try {
+                const editProductBranch = await ProductBranch.findByIdAndUpdate(req.body.id, {
+                    $inc: {
+                        quantity: parseFloat('-'+req.body.entry)
+                    }
+                })
+                if (editProductBranch) {
+                    res.json({status: 'ok', token: req.requestToken})
+                }
+            }catch(err){
+                res.send(err)
+            }
+        }
+    }catch(err){
+        res.send(err)
+    }
+})
+
+products.put('/deleteProductToBranch/:branch', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Product = conn.model('products', productSchema)
+    const ProductBranch = conn.model('productsbranch', productBranchSchema)
+
+    try {
+        const editProductInventory = await Product.findByIdAndUpdate(req.body.idInventory, {
+            $inc: {
+                quantity: parseFloat(req.body.quantity)
+            }
+        })
+        if(editProductInventory){
+            try {
+                const deleteProductBranch = await ProductBranch.findByIdAndRemove(req.body.id)
+                if (deleteProductBranch) {
+                    res.json({status: 'ok', token: req.requestToken})
+                }
+            }catch(err){
+                res.send(err)
+            }
         }
     }catch(err){
         res.send(err)

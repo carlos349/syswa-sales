@@ -2,6 +2,9 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const saleSchema = new Schema({
+    branch: {
+        type: String
+    },
     items: {
         type: Array
     },
@@ -16,6 +19,9 @@ const saleSchema = new Schema({
     },
     count: {
         type: Number
+    },
+    origin: {
+        type: String
     },
     status: {
         type: Boolean

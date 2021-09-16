@@ -5,8 +5,9 @@ const protectRoute = require('../securityToken/verifyToken')
 const saleSchema = require('../models/Sales')
 const closureSchema = require('../models/Closures')
 const cashfundSchema = require('../models/CashFunds')
+const productBranchSchema = require('../models/ProductsBranch')
 const daySaleSchema = require('../models/DaySales')
-const configurationSchema = require('../models/configurations')
+const configurationSchema = require('../models/Configurations')
 const historyClosedInventorySchema = require('../models/HistoryClosedProducts')
 const clientSchema = require('../models/Clients')
 const productSchema = require('../models/Products')
@@ -19,6 +20,52 @@ sales.use(cors())
 // input - null
 // output - status, data, token
 sales.get('/', protectRoute, async (req, res) => {
+  const database = req.headers['x-database-connect'];
+  const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+
+  const Sale = conn.model('sales', saleSchema)
+  try {
+      const getSales = await Sale.find({branch: req.params.branch}).sort({createdAt: -1})
+      if (getSales.length > 0) {
+          res.json({status: 'ok', data: getSales, token: req.requestToken})
+      }else{
+          res.json({status: 'bad', data: getSales, token: req.requestToken})
+      }
+  }catch(err){
+      res.send(err)
+  }
+})
+
+// input - null
+// output - status, data, token
+sales.get('/getConfiguration', protectRoute, async (req, res) => {
+  const database = req.headers['x-database-connect'];
+  const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+
+  const Configuration = conn.model('configurations', configurationSchema)
+  
+  try {
+      const getConfiguration = await Configuration.find()
+      console.log(getConfiguration)
+      if (getConfiguration.length > 0) {
+          res.json({status: 'ok', data: getConfiguration, token: req.requestToken})
+      }else{
+          res.json({status: 'bad', data: getConfiguration, token: req.requestToken})
+      }
+  }catch(err){
+      res.send(err)
+  }
+})
+
+// input - null
+// output - status, data, token
+sales.get('/:branch', protectRoute, async (req, res) => {
     const database = req.headers['x-database-connect'];
     const conn = mongoose.createConnection('mongodb://localhost/'+database, {
         useNewUrlParser: true,
@@ -27,35 +74,11 @@ sales.get('/', protectRoute, async (req, res) => {
 
     const Sale = conn.model('sales', saleSchema)
     try {
-        const getSales = await Sale.find().sort({createdAt: -1})
+        const getSales = await Sale.find({branch: req.params.branch}).sort({createdAt: -1})
         if (getSales.length > 0) {
             res.json({status: 'ok', data: getSales, token: req.requestToken})
         }else{
             res.json({status: 'bad', data: getSales, token: req.requestToken})
-        }
-    }catch(err){
-        res.send(err)
-    }
-})
-
-// input - null
-// output - status, data, token
-sales.get('/getConfiguration', protectRoute, async (req, res) => {
-    const database = req.headers['x-database-connect'];
-    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
-
-    const Configuration = conn.model('configuration', configurationSchema)
-
-    try {
-        const getConfiguration = await Configuration.find()
-        console.log(getConfiguration)
-        if (getConfiguration.length > 0) {
-            res.json({status: 'ok', data: getConfiguration, token: req.requestToken})
-        }else{
-            res.json({status: 'bad', data: getConfiguration, token: req.requestToken})
         }
     }catch(err){
         res.send(err)
@@ -390,7 +413,8 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
         const sales = await Sale.find({
           $and: [
             {createdAt: {$gte: data.rangeExcel[0]+' 00:00', $lte: data.rangeExcel[1]+' 24:00'}},
-            {status:true}
+            {status:true},
+            {branch: req.body.branch}
           ]
         })
         if(sales.length > 0){
@@ -406,7 +430,7 @@ sales.post('/generateDataExcel', protectRoute, async (req, res) => {
             }
             for (const items of element.items) {
               if (items.type == 'product') {
-                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: parseInt(items.quantityProduct), Precio: items.item.price, Despacho: element.shipping, Total: items.totalItem, ...typesPay})
+                dataTable.push({Fecha: formats.dates(element.createdAt), ID: 'V-'+element.count, Cliente: element.client.firstName+' '+element.client.lastName, Producto: items.item.name, Cantidad: parseInt(items.quantityProduct), Precio: items.item.price, Despacho: element.shipping, Total: items.totalItem, Origen: sales.origin ? sales.origin : 'Sin origin registrado', ...typesPay})
               }
             }
           }
@@ -487,7 +511,7 @@ sales.post('/process', protectRoute, (req, res) => {
   const DaySale = conn.model('daySales', daySaleSchema)
   const Sale = conn.model('sales', saleSchema)
   const Client = conn.model('clients', clientSchema)
-  const Product = conn.model('products', productSchema)
+  const ProductBranch = conn.model('productsbranch', productBranchSchema)
 
   const items = req.body.items
   const total = req.body.total
@@ -499,12 +523,14 @@ sales.post('/process', protectRoute, (req, res) => {
   const shipping = req.body.shipping
   
   const dataSale = {
+    branch: req.body.branch,
     items: [],
     client: client,
     localGain: 0,
     typesPay: typesPay,
     purchaseOrder: 0,
     count: 0,
+    origin: req.body.originSale,
     status: true,
     shipping: shipping == '' ? 0 : shipping,
     totals: {
@@ -516,6 +542,7 @@ sales.post('/process', protectRoute, (req, res) => {
   }
 
   const daySale = {
+    branch: req.body.branch,
     items: items,
     typesPay: typesPay,
     total: total,
@@ -564,7 +591,7 @@ sales.post('/process', protectRoute, (req, res) => {
                 for (let index = 0; index < items.length; index++) {
                   const item = items[index];
                   if (item.tag == 'product') {
-                    Product.findByIdAndUpdate(item.item._id,{
+                    ProductBranch.findByIdAndUpdate(item.item._id,{
                       $inc: {
                         consume: parseInt(item.quantityProduct)
                       }

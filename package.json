@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/carlos349/syswa-sales#readme",
   "dependencies": {
+    "aws-sdk": "^2.984.0",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
@@ -33,6 +34,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.13.2",
     "morgan": "^1.10.0",
+    "multer": "^1.4.3",
+    "multer-s3": "^2.9.0",
     "nodemon": "^2.0.11",
     "socket.io": "^2.3.0"
   }

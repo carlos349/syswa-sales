@@ -3,32 +3,32 @@ const { Schema } =  mongoose
 
 const historyInventorySchema = new Schema({
    id: {
-        type: String
+     type: String
    },
    user: {
-        type: Object
+     type: Object
    },
    product: {
-        type: String
+     type: String
    },
    entry: {
-        type: Number
+     type: Number
    },
    measure: {
-        type: String
+     type: String
    },
    price: {
-        type: String
+     type: String
    },
    promedyPrice: {
-        type: Number
+     type: Number
    },
    provider: {
-        type: String
+     type: String
    },
    date: {
-        type: Date,
-        default: Date.now
+     type: Date,
+     default: Date.now
    }
 })
 

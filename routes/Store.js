@@ -467,6 +467,51 @@ stores.put('/updateprovider/:id', protectRoute, async (req, res) => {
     })
 })
 
+stores.put('/discountProductStore/:id', protectRoute, async (req, res) => {
+    const database = req.headers['x-database-connect'];
+    const conn = mongoose.createConnection('mongodb://localhost/'+database, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+
+    const Store = conn.model('stores', storeSchema)
+    const History = conn.model('historyInventories', historyInventorySchema)
+
+    const historical = {
+        id: req.params.id,
+        branch: req.body.branch,
+        user: {
+            firstName: req.body.firstNameUser,
+            lastName: req.body.lastNameUser,
+            email: req.body.emailUser
+        },
+        price: parseFloat(req.body.productPromedy) * parseFloat(req.body.quantity),
+        promedyPrice: req.body.productPromedy,
+        provider: 'Bodega',
+        product: req.body.product,
+        entry: req.body.quantity,
+        measure: req.body.measure,
+        date: new Date()
+    }
+    try{
+        const discountStore = await Store.findByIdAndUpdate(req.params.id, {
+            $inc: {
+                quantity: parseFloat('-'+req.body.quantity)
+            }
+        })
+        if (discountStore) {
+            try {
+                const registerHistory = await History.create(historical)
+                res.json({status: 'ok', token: req.requestToken}) 
+            }catch(err){
+                res.send(err)
+            }
+        }
+    }catch(err){
+        res.send(err)
+    }
+})
+
 //Final de la api. (Retorna: Datos del provedor) -- Api end. (Return: Provider´s data)
 
 //--------------------------------------------------------------------------------------

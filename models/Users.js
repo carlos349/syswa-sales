@@ -2,6 +2,9 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const userSchema = new Schema ({
+    branch: {
+        type: String
+    },
     access: {
         type: Array
     },
