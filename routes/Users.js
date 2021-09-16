@@ -80,6 +80,7 @@ users.post('/registerUser', protectRoute, async (req, res) => {
     const User = conn.model('users', userSchema)
 
     const data = {
+        branch: req.body.branch,
         access: [{
             "ruta" : "usuarios",
             "validaciones" : [
