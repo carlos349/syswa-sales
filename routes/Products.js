@@ -135,23 +135,27 @@ products.post('/addProductToProductBranch', protectRoute, async (req, res) => {
     const ProductBranch = conn.model('productsbranch', productBranchSchema)
 
     console.log(req.body.product)
-    const product = req.body.product
-    const data = {
-        branch: req.body.branch,
-        product: product.product,
-        quantity: 0,
-        consume: 0,
-        price: product.price,
-        rawMaterial: product.rawMaterial,
-        idInventory: product._id,
-        createdAt: new Date()
-    }
-
-    try {
-        const createProduct = await ProductBranch.create(data)
-        res.json({status: 'ok', data: createProduct, token: req.requestToken})
-    }catch(err){
-        res.send(err)
+    if(req.body.product){
+        const product = req.body.product
+        const data = {
+            branch: req.body.branch,
+            product: product.product,
+            quantity: 0,
+            consume: 0,
+            price: product.price,
+            rawMaterial: product.rawMaterial,
+            idInventory: product._id,
+            createdAt: new Date()
+        }
+    
+        try {
+            const createProduct = await ProductBranch.create(data)
+            res.json({status: 'ok', data: createProduct, token: req.requestToken})
+        }catch(err){
+            res.send(err)
+        }
+    }else{
+        res.json({status: 'bad'})
     }
 })
 
