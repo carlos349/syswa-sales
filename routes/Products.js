@@ -320,7 +320,7 @@ products.put('/addProductToBranch/:branch', protectRoute, async (req, res) => {
     try {
         const editProductInventory = await Product.findByIdAndUpdate(req.body.idInventory, {
             $inc: {
-                quantity: parseFloat('-'+req.body.entry)
+                consume: parseFloat(req.body.entry)
             }
         })
         if(editProductInventory){
@@ -355,7 +355,7 @@ products.put('/removeProductToBranch/:branch', protectRoute, async (req, res) =>
     try {
         const editProductInventory = await Product.findByIdAndUpdate(req.body.idInventory, {
             $inc: {
-                quantity: parseFloat(req.body.entry)
+                consume: parseFloat('-'+req.body.entry)
             }
         })
         if(editProductInventory){
