@@ -828,7 +828,7 @@ sales.put('/:id', protectRoute, async (req, res, next) => {
   })
   const DaySale = conn.model('daySales', daySaleSchema)
   const Sale = conn.model('sales', saleSchema)
-  const Product = conn.model('products', productSchema)
+  const ProductBranch = conn.model('productsbranch', productBranchSchema)
   const id = req.params.id
   
   try {
@@ -839,7 +839,7 @@ sales.put('/:id', protectRoute, async (req, res, next) => {
     console.log(items)
     for (let index = 0; index < items.length; index++) {
       const item = items[index];
-      Product.findByIdAndUpdate(item.item._id,{
+      ProductBranch.findByIdAndUpdate(item.item._id,{
         $inc: {
           consume: parseFloat('-'+item.quantityProduct)
         }
